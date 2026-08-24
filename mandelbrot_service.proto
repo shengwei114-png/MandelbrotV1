@@ -23,7 +23,7 @@ service MandelbrotService {
 message UniqueIdRequest {
     string worker_id = 1;    // 客户端的唯一标识 (Worker ID)
     int32 local_rank = 2;           // 客户端的本地 Rank (可选，方便 Server 记录拓扑)
-    int64 step = 3;            // 发起请求的时间戳
+    int64 timestamp = 3;            // 发起请求的时间戳
 }
 
 message UniqueIdResponse {
@@ -52,7 +52,7 @@ message UniqueIdResponse {
     int32 world_size = 8;
 
     // 响应的时间戳 (Unix 毫秒时间戳)，用于网络延迟评估与超时控制
-    int64 step = 9;
+    int64 timestamp = 9;
 }
 
 message SignalRequest { 
