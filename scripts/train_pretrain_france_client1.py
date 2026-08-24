@@ -4380,8 +4380,8 @@ def main():
             _model_for_dataset = model.module if (ddp_enabled and hasattr(model, "module")) else model
             dataset = StreamingTextDataset(
                 config,
-                #folder=args.train_folder,
-                folder=args.train_folder_tokenID,
+                folder=args.train_folder,
+                # folder=args.train_folder_tokenID,
                 tokenizer=None,
                 pad_mode=args.pad_mode,
                 tokenizer_name=args.tokenizer_name,
