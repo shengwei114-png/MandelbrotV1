@@ -22,9 +22,9 @@ import unicodedata
 
 
 p = argparse.ArgumentParser()
-p.add_argument("--model_root", default="/root/autodl-tmp/MandelbrotV1/configs/client")
-p.add_argument("--checkpoint_dir", default="/root/autodl-tmp/MandelbrotV1/outputs_incremental_pretraining_client/checkpoint-epoch-0")
-p.add_argument("--tokenizer_dir", default="/root/autodl-tmp/MandelbrotV1/gemma3_tok_26layers4/gemma3_26layers_v2")
+p.add_argument("--model_root", default="../MandelbrotV1/configs/client")
+p.add_argument("--checkpoint_dir", default="../MandelbrotV1/outputs_incremental_pretraining_client/checkpoint-epoch-0")
+p.add_argument("--tokenizer_dir", default="../MandelbrotV1/tok_26layers4/26_tokenizers")
 p.add_argument("--local_rank", type=int, default=-1,
                    help="Local rank for distributed training. Set by torchrun/launch utility automatically.")
 p.add_argument("--prompt", default="I'd like to see more computer language instructions like the")
