@@ -38,16 +38,21 @@ source .venv/bin/activate
 # Example below uses cu128; replace cu128 with your CUDA version if different
 python -m pip install --index-url https://download.pytorch.org/whl/cu128 torch==2.7.1 torchvision==0.22.1
 
-# 2) Install the build tools required by FlashAttention
+# 2) Install the remaining dependencies
+# Upgrade the packaging/build tools first because some dependencies need them.
 python -m pip install -U pip setuptools wheel packaging ninja
-
-# 3) Install FlashAttention separately without pip build isolation
-# MAX_JOBS limits parallel compilation to reduce peak RAM usage
-MAX_JOBS=4 python -m pip install --no-build-isolation "flash-attn==2.8.3.post1"
-
-# 4) Install the remaining dependencies. The installed FlashAttention version
-# satisfies flash-attn>=2.8.0 in requirements.txt, so pip will skip rebuilding it.
 python -m pip install -r requirements.txt
+
+# 3) Install FlashAttention separately from source without pip build isolation
+# This uses the PyTorch/CUDA installation in the active virtual environment.
+export CUDA_HOME=/usr/local/cuda-12.8
+export PATH="$CUDA_HOME/bin:$PATH"
+export LD_LIBRARY_PATH="$CUDA_HOME/lib64:${LD_LIBRARY_PATH:-}"
+
+# Force a local source build instead of downloading a prebuilt wheel from GitHub.
+# MAX_JOBS limits parallel compilation to reduce peak RAM usage.
+FLASH_ATTENTION_FORCE_BUILD=TRUE MAX_JOBS=4 \
+python -m pip install -v --no-build-isolation "flash-attn==2.8.3.post1"
 ```
 
 Notes:
