@@ -2,7 +2,7 @@
 # coding: utf-8
 """
 pretrain_gpt_1B_pytorch.py
-Single-GPU (RTX 4090) pretraining script using PyTorch + Hugging Face transformers.
+Single-GPU (RTX 5090) pretraining script using PyTorch + Hugging Face transformers.
 Tailored defaults for a ~1B-parameter GPT-like causal LM trained on local txt files.
 Key features/choices for single 24GB GPU:
  - Model: create-from-config GPT-2 like (default: ~24 layers, 2048 hidden -> ~target 1B params)
@@ -17,7 +17,7 @@ IMPORTANT:
    adjust n_layer / n_embd / n_head accordingly.
  - Tune gradient_accumulation_steps to get desired effective batch size.
  - This script purposely avoids distributed training code (DDP/DeepSpeed) since you
-   requested single-GPU RTX4090.
+   requested single-GPU RTX5090.
 
 Usage example:
   python pretrain_gpt_1B_pytorch.py \
