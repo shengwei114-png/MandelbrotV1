@@ -45,9 +45,20 @@ python -m pip install -r requirements.txt
 
 # 3) Install FlashAttention separately from source without pip build isolation
 # This uses the PyTorch/CUDA installation in the active virtual environment.
+# First compare the CUDA version used by PyTorch with the nvcc compiler version.
+python -c "import torch; print('PyTorch CUDA:', torch.version.cuda)"
+nvcc --version
+
+# If nvcc is available and its CUDA version matches PyTorch, skip the following
+# find and export commands. Otherwise, locate nvcc and set the correct toolkit.
+find /usr/local /opt -type f -name nvcc 2>/dev/null | head
+
+# Set CUDA_HOME to the actual toolkit root that contains bin/nvcc.
+# /usr/local/cuda-12.8 is only an example and must match your environment.
 export CUDA_HOME=/usr/local/cuda-12.8
 export PATH="$CUDA_HOME/bin:$PATH"
 export LD_LIBRARY_PATH="$CUDA_HOME/lib64:${LD_LIBRARY_PATH:-}"
+"$CUDA_HOME/bin/nvcc" --version
 
 # Force a local source build instead of downloading a prebuilt wheel from GitHub.
 # MAX_JOBS limits parallel compilation to reduce peak RAM usage.
@@ -58,7 +69,7 @@ python -m pip install -v --no-build-isolation "flash-attn==2.8.3.post1"
 Notes:
 - `torch==2.7.1` / `torchvision==0.22.1` are version examples. If your hardware/driver does not match, switch to the appropriate CUDA version and installation source. This exact combination is not mandatory.
 
-- Building FlashAttention from source requires a complete CUDA development toolkit, including `nvcc`. Run `nvcc --version` before installation if you are unsure whether it is available.
+- FlashAttention uses `nvcc` to compile its CUDA kernels, which is why the compiler path and version may need to be checked. Compare `nvcc --version` with `torch.version.cuda` first. If `nvcc` is already available and the versions match, you do not need to locate it or set the CUDA environment variables again. If `nvcc` is missing or points to a different toolkit, locate it, set `CUDA_HOME` to the toolkit root containing `bin/nvcc`, and verify it with `"$CUDA_HOME/bin/nvcc" --version`. The `/usr/local/cuda-12.8` value above is only an example.
 
 - You also need to replace a file in the transformers package: copy `modeling_outputs.py` from the `transformers` directory in this folder, overwriting the one at `.venv/lib/python3.12/site-packages/transformers/modeling_outputs.py`.
 
