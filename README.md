@@ -26,7 +26,7 @@ sudo apt-get install -y tmux
 Run the following commands from the repository root:
 
 ```bash
-cd /path/to/MandelbrotV1
+cd ../MandelbrotV1
 python3.12 -m venv .venv
 source .venv/bin/activate
 ```
