@@ -271,11 +271,11 @@
   "moe_intermediate_size": 1407,
   "moe_layer_freq": 1,
   "mor": true,
-  "mor_scale": 1000.0,
+  "mor_scale": 0.0,
   "n_group": null,
   "n_routed_experts": null,
   "n_shared_experts": null,
-  "non_zero_count_scale": 1.0,
+  "non_zero_count_scale": 0.0,
   "norm_rank": 4,
   "norm_topk_prob": false,
   "num_attention_heads": 16,
@@ -300,11 +300,10 @@
   "use_dimensionality_elevation": true,
   "use_dimensionality_reduction": false,
   "use_mutilayer_tokenizer": true,
-  "use_tokenizer_embedding": false,
+  "use_tokenizer_embedding": true,
   "v_head_dim": 128,
   "vocab_size": 420,
   "weight_para_indep_scale": 1.0,
   "_attn_implementation": "flash_attention_2",
-  "_pre_quantization_dtype": "bfloat16",
-  "use_uds":false
+  "_pre_quantization_dtype": "bfloat16"
 }
