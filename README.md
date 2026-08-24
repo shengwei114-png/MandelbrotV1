@@ -36,14 +36,24 @@ source .venv/bin/activate
 ```bash
 # 1) Install PyTorch first (CUDA versions are not on the default PyPI index)
 # Example below uses cu128; replace cu128 with your CUDA version if different
-pip install --index-url https://download.pytorch.org/whl/cu128 torch==2.7.1 torchvision==0.22.1
+python -m pip install --index-url https://download.pytorch.org/whl/cu128 torch==2.7.1 torchvision==0.22.1
 
-# 2) Install remaining dependencies
-pip install -r requirements.txt
+# 2) Install the build tools required by FlashAttention
+python -m pip install -U pip setuptools wheel packaging ninja
+
+# 3) Install FlashAttention separately without pip build isolation
+# MAX_JOBS limits parallel compilation to reduce peak RAM usage
+MAX_JOBS=4 python -m pip install --no-build-isolation "flash-attn==2.8.3.post1"
+
+# 4) Install the remaining dependencies. The installed FlashAttention version
+# satisfies flash-attn>=2.8.0 in requirements.txt, so pip will skip rebuilding it.
+python -m pip install -r requirements.txt
 ```
 
 Notes:
 - `torch==2.7.1` / `torchvision==0.22.1` are version examples. If your hardware/driver does not match, switch to the appropriate CUDA version and installation source. This exact combination is not mandatory.
+
+- Building FlashAttention from source requires a complete CUDA development toolkit, including `nvcc`. Run `nvcc --version` before installation if you are unsure whether it is available.
 
 - You also need to replace a file in the transformers package: copy `modeling_outputs.py` from the `transformers` directory in this folder, overwriting the one at `.venv/lib/python3.12/site-packages/transformers/modeling_outputs.py`.
 
