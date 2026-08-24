@@ -11,3 +11,4 @@ pynvml==13.0.1
 torchviz==0.0.3
 faiss-gpu==1.14.3
 sentencepiece==0.2.1
+matplotlib==3.11.1
