@@ -2305,7 +2305,7 @@ def parse_args():
 
     # data
     p.add_argument("--train_folder", type=str,default="../MandelbrotV1/10GB-BLSZ-1024-0820-detect-clean-dup-3", help="Folder containing .txt files (recursively)")
-    p.add_argument("--train_folder_tokenID", type=str,default="../MandelbrotV1/10GB-BLSZ-1024-0820-detect-clean-dup-3-token-id", help="Folder containing .txt files (recursively)")
+    # p.add_argument("--train_folder_tokenID", type=str,default="../MandelbrotV1/10GB-BLSZ-1024-0820-detect-clean-dup-3-token-id", help="Folder containing .txt files (recursively)")
     p.add_argument("--max_train_lines", type=int, default=None, help="max number of lines to read (for debugging)")
     # model / tokenizer
 
