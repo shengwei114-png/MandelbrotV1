@@ -1,0 +1,340 @@
+syntax = "proto3"; 
+
+package mandelbrot; 
+
+service MandelbrotService { 
+    rpc WaitForSignal(SignalRequest) returns (stream SignalResponse); 
+    rpc SendSignal(SignalRequest) returns (SignalResponse); 
+    rpc ApplyForBlock(BlockApplyRequest) returns (BlockApplyResponse); 
+    rpc SendBlockData(SomeRequest) returns (SignalResponse); 
+    rpc RequestBlockData(BlockDataRequest) returns (SomeRequest); 
+    rpc NotifyTrainingComplete(TrainingCompleteNotify) returns (SignalResponse); 
+    rpc SyncStep(SyncRequest) returns (SyncResponse); 
+    
+    // 新增：Layer参数同步相关方法
+    rpc SyncLayerParameters(LayerParameterSyncRequest) returns (LayerParameterSyncResponse);
+    rpc GetSyncParameters(SyncParameterRequest) returns (SyncParameterResponse);
+    rpc RegisterAndGetUniqueId(UniqueIdRequest) returns (UniqueIdResponse);
+    rpc ReportOomAndWait(OomReportRequest) returns (OomReportResponse);
+    rpc ClearGradientCache(ClearGradientCacheRequest) returns (ClearGradientCacheResponse);
+    rpc BackwardGradient(GradientBackwardRequest) returns (GradientBackwardResponse);
+} 
+
+message UniqueIdRequest {
+    string worker_id = 1;    // 客户端的唯一标识 (Worker ID)
+    int32 local_rank = 2;           // 客户端的本地 Rank (可选，方便 Server 记录拓扑)
+    int64 step = 3;            // 发起请求的时间戳
+}
+
+message UniqueIdResponse {
+    // 请求是否成功 (例如：节点注册成功、等待其他节点加入等)
+    bool success = 1;
+
+    // 响应消息，用于向客户端反馈详细状态或错误原因
+    string message = 2;
+
+    // 【新增】主节点 IP 地址，供客户端建立 TCP 连接或初始化分布式环境
+    string master_addr = 3;
+
+    // 【新增】主节点通信端口
+    int32 master_port = 4;
+
+    // Server 确认并分配给 Client 的全局 Rank (防止 Client 自行计算导致冲突)
+    int32 client_global_rank = 5;
+
+    // Server 自身的全局 Rank
+    int32 server_global_rank = 6;
+
+    // Server 的唯一 Worker ID，便于客户端日志追踪与调试
+    string server_worker_id = 7;
+
+    // 客户端预期的 World Size，用于 Server 校验集群节点是否已完全到齐
+    int32 world_size = 8;
+
+    // 响应的时间戳 (Unix 毫秒时间戳)，用于网络延迟评估与超时控制
+    int64 step = 9;
+}
+
+message SignalRequest { 
+    string worker_id = 1; 
+    string signal_name = 2; 
+    string message = 3; 
+    int64 step = 4; 
+} 
+
+message SignalResponse { 
+    bool success = 1; 
+    string message = 2; 
+    int64 step = 3; 
+} 
+
+message BlockApplyRequest { 
+    string worker_id = 1; 
+    int32 block_idx = 2; 
+    int64 step = 3; 
+} 
+
+message BlockApplyResponse { 
+    bool approved = 1; 
+    string message = 2; 
+    int32 assigned_block_idx = 3; 
+} 
+
+message BlockDataRequest { 
+    string worker_id = 1; 
+    int32 block_idx = 2; 
+    bool is_grad_enabled = 3;
+    int64 step = 4; 
+} 
+
+message TrainingCompleteNotify { 
+    string worker_id = 1; 
+    int32 block_idx = 2; 
+    int64 step = 3; 
+    float loss = 4; 
+    string message = 5; 
+} 
+
+message BlockData {
+    bytes hidden_states = 1; 
+    repeated int64 hidden_states_shape = 2; 
+    string hidden_states_dtype = 3;
+    bytes attention_mask = 4; 
+    repeated int64 attention_mask_shape = 5; 
+    bytes position_ids = 6; 
+    repeated int64 position_ids_shape = 7; 
+     // KV Cache 相关
+    repeated bytes past_keys = 8; 
+    repeated bytes past_values = 9; 
+    repeated int64 kv_shapes = 10; 
+
+    // 控制标志
+    bool output_attentions = 11; 
+    bool use_cache = 12; 
+     
+    // 其他参数
+    repeated int32 mor_layer_ids = 13; 
+     
+    // 扩展字段 (16+)
+    repeated StringBytesEntry out_middle_proj = 14; 
+    repeated Int64ListEntry out_middle_proj_shapes = 15; 
+    repeated StringBytesEntry kwargs = 16; 
+     
+    // 路由与元数据
+    int32 block_idx = 17;
+    bool use_triple = 18;
+}
+
+message SomeRequest { 
+    // 核心输入张量
+    repeated BlockData blocks = 1;
+    string server_worker_id = 2;        // Server 端 Worker ID
+    
+    string worker_id = 3; 
+    int64 step = 4; 
+    
+} 
+
+message StringBytesEntry { 
+    string key = 1; 
+    bytes value = 2; 
+} 
+
+message Int64ListEntry { 
+    string key = 1; 
+    repeated int64 value = 2; 
+} 
+
+message SyncRequest { 
+    string worker_id = 1; 
+    int64 client_step = 2; 
+    float client_loss = 3; 
+    bool is_server = 4; 
+} 
+
+message SyncResponse { 
+    bool success = 1; 
+    int64 global_step = 2; 
+    float adjusted_lr = 3; 
+    bool should_stop = 4; 
+    string message = 5; 
+} 
+
+// ============================================================
+// 新增：Layer参数同步相关消息定义
+// ============================================================
+
+// Layer参数同步请求（同步layer_idx、worker_id、bMax_frequency）
+message LayerParameterSyncRequest {
+    string worker_id = 1;             // 客户端ID（ID）
+    int32 batch_size = 2;        // 分布式训练的起始块索引
+    int32 layer_idx = 3;              // 层索引（layer_idx）
+    bool b_max_frequency = 4;         // bMax_frequency参数值
+    int64 step = 5;                   // 当前训练步骤
+    bytes additional_data = 7;        // 额外数据（如果需要）
+    bool use_gradient_checkpointing = 8;         //梯度检查模式
+    repeated int64 tensor_shape = 9; 
+    string tensor_dtype = 10;  
+    bool use_nccl = 11;
+    int32 last_layer_idx=12;
+    string destination_work_id=13;
+    float lr=14;
+}
+
+// Layer参数同步响应
+message LayerParameterSyncResponse {
+    bool success = 1;                 // 同步是否成功
+    string message = 2;               // 响应消息
+    string worker_id = 3;             // 客户端ID（ID）
+    int64 step = 4;              // 时间戳
+    bool use_nccl = 5;
+    bool use_gradient_checkpointing =6;
+    bool use_triple = 7;
+    float mem_threshold=8;
+    float vram_threshold=9;
+    int32 save_epochs=10;
+    int32 save_steps=11;
+    bool use_cross_card_op=12;
+}
+
+// 同步参数请求
+message SyncParameterRequest {
+    string worker_id = 1;             // 客户端ID
+    int32 requested_layer_idx = 2;    // 请求的层索引（可选）
+    int64 step = 3;              // 时间戳
+}
+
+// 同步参数响应
+message SyncParameterResponse {
+    bool success = 1;                 // 请求是否成功
+    string message = 2;               // 响应消息
+    repeated SyncedParameterEntry parameters = 3; // 同步的参数列表
+    int64 step = 4;              // 时间戳
+}
+
+// 同步参数条目
+message SyncedParameterEntry {
+    string worker_id = 1;             // 工作节点ID（ID）
+    int32 layer_idx = 2;              // 层索引（layer_idx）
+    bool b_max_frequency = 3;         // bMax_frequency值
+    int64 last_updated_step = 4;      // 最后更新步骤
+    int64 step = 5;              // 时间戳
+    bool is_active = 6;               // 是否活跃
+}
+
+// ============================================================
+// 新增：显存爆炸(OOM)上报及等待时间协商相关消息定义
+// ============================================================
+
+// 显存溢出上报请求
+message OomReportRequest {
+    string worker_id = 1;             // 发生 OOM 的客户端 ID
+    int32 block_idx = 2;              // 发生 OOM 时的块索引
+    int64 step = 3;                   // 当前训练步骤
+    int64 timestamp = 4;              // 发起请求的时间戳
+    
+    // 显存状态信息
+    float current_vram_usage_gb = 5;  // 当前显存使用量 (GB)
+    float total_vram_gb = 6;          // 总显存大小 (GB)
+    float requested_vram_gb = 7;      // 触发 OOM 时请求的显存大小 (GB)
+    
+    // 错误与上下文信息
+    string error_message = 8;         // 具体的 OOM 错误信息 (如 CUDA out of memory)
+    string layer_name = 9;            // 发生 OOM 的层名称或标识 (可选)
+    
+    // 客户端期望的等待时间 (毫秒)
+    int64 requested_wait_time_ms = 10; 
+}
+
+// 显存溢出上报响应
+message OomReportResponse {
+    bool success = 1;                 // 服务端是否成功接收并处理
+    string message = 2;               // 响应消息或全局调度指令
+    
+    // 服务端分配的等待时间 (毫秒)
+    // 客户端收到后应暂停训练/重试，等待该时间后再继续
+    int64 assigned_wait_time_ms = 3;  
+    
+    // 服务端建议的恢复策略
+    OomRecoveryStrategy recovery_strategy = 4; 
+    
+    // 响应时间戳
+    int64 timestamp = 5;              
+}
+
+// 恢复策略枚举
+enum OomRecoveryStrategy {
+    STRATEGY_UNKNOWN = 0;             // 未知/默认
+    STRATEGY_RETRY = 1;               // 等待后直接重试当前 Step
+    STRATEGY_REDUCE_BATCH = 2;        // 降低 Batch Size 后重试
+    STRATEGY_GRADIENT_CHECKPOINT = 3; // 开启/增加梯度检查点以节省显存
+    STRATEGY_ABORT = 4;               // 放弃当前 Step 或终止训练
+}
+
+
+// ============================================================
+// 新增：MoR 无 Loss 时清除梯度检查点缓存相关消息定义
+// ============================================================
+
+// 清除梯度检查点缓存请求
+message ClearGradientCacheRequest {
+    string worker_id = 1;             // 发起请求的客户端/中间服务器 ID
+    int32 block_idx = 2;              // 发生无 Loss 的块索引 (Block Index)
+    int64 step = 3;                   // 当前训练步骤 (Global Step)
+    
+    // 缓存标识与上下文
+    string layer_name = 5;            // 触发清除的层名称或 MoR 标识 (可选)
+    string reason = 6;                // 清除原因 (例如: "mor_no_loss", "skip_gradient_checkpoint")
+}
+
+// 清除梯度检查点缓存响应
+message ClearGradientCacheResponse {
+    bool success = 1;                 // 服务端是否成功处理清除请求
+    string message = 2;               // 响应消息或详细状态
+    int32 cleared_count = 3;          // 实际清除的缓存条目数量 (便于调试与监控)
+    int64 step = 4;              // 服务端处理完成的时间戳
+}
+
+// ============================================================
+// 新增：梯度回传相关消息定义
+// ============================================================
+
+// 梯度回传请求（通常由下游节点发送给上游节点）
+message GradientBackwardRequest {
+    string worker_id = 1;             // 发送方（下游节点）的 Worker ID
+    string destination_worker_id = 2; // 接收方（上游节点）的 Worker ID
+    int32 block_idx = 3;              // 对应的 Block 索引
+    int64 step = 4;                   // 当前全局训练步数 (Global Step)
+
+    // 核心梯度数据 (对应前向传播中的 hidden_states 梯度)
+    bytes grad_hidden_states = 6;
+    repeated int64 grad_hidden_states_shape = 7;
+    string grad_hidden_states_dtype = 8;
+
+    // 注意力掩码梯度 (如果前向传播中需要)
+    bytes grad_attention_mask = 9;
+    repeated int64 grad_attention_mask_shape = 10;
+
+    // KV Cache 梯度 (如果启用了反向传播到 KV Cache)
+    repeated bytes grad_past_keys = 11;
+    repeated bytes grad_past_values = 12;
+    repeated int64 grad_kv_shapes = 13;
+
+    // MoR / 中间投影层梯度
+    repeated StringBytesEntry grad_out_middle_proj = 14;
+    repeated Int64ListEntry grad_out_middle_proj_shapes = 15;
+
+    // 控制标志与元数据
+    bool has_nan_or_inf = 16;         // 梯度是否包含 NaN/Inf (用于提前熔断)
+    float grad_norm = 17;             // 梯度范数 (可选，用于监控梯度爆炸)
+    string kwargs = 18;               // 其他扩展参数
+}
+
+// 梯度回传响应（上游节点接收并处理完毕后返回）
+message GradientBackwardResponse {
+    bool success = 1;                 // 是否成功接收并触发本地 backward
+    string message = 2;               // 状态消息或错误原因
+    string worker_id = 3;             // 接收方 Worker ID
+    int64 step = 4;              // 处理完成的时间戳
+    bool ready_for_next_step = 5;     // 是否准备好接收下一个 Step 的梯度
+}
