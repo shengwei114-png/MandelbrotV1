@@ -16,9 +16,9 @@ os.environ['NO_PROXY'] = 'localhost,127.0.0.1,::1'
 from BaseTextDataset import StreamingTextDataset, worker_init_fn, AsyncPrefetchDataLoader
 
 p = argparse.ArgumentParser()
-p.add_argument("--model_root", default="/root/autodl-tmp/MandelbrotV1/configs/server")
-p.add_argument("--checkpoint_dir", default="/root/autodl-tmp/MandelbrotV1/outputs_incremental_pretraining_server/checkpoint-epoch-0")
-p.add_argument("--tokenizer_dir", default="/root/autodl-tmp/MandelbrotV1/gemma3_tok_26layers4/gemma3_26layers_v2")
+p.add_argument("--model_root", default="../MandelbrotV1/configs/server")
+p.add_argument("--checkpoint_dir", default="../MandelbrotV1/outputs_incremental_pretraining_server/checkpoint-epoch-0")
+p.add_argument("--tokenizer_dir", default="../MandelbrotV1/tok_26layers4/26_tokenizers")
 p.add_argument("--local_rank", type=int, default=-1,
                    help="Local rank for distributed training. Set by torchrun/launch utility automatically.")
 p.add_argument("--max_steps", type=int, default=-1)
