@@ -176,7 +176,7 @@ forward_layer_idx = None if use_dr else 0
 ds.tokenizer = tm.tokenizers[chosen_layer]
 generated_ids = []
 past_key_values = None
-print("[Client] Prompt:", repr(args.prompt), "seq_len:", input_ids.shape[1])
+print("[Client] Prompt:", repr(args.prompt),"input_ids:",input_ids, "seq_len:", input_ids.shape[1])
 autocast_kwargs = {
     "device_type": "cuda", 
     "dtype": torch.bfloat16  # 如果是老显卡请改为 torch.float16
