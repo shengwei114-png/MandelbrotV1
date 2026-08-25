@@ -2798,7 +2798,7 @@ def parse_args():
     p.add_argument("--valid_loader", type=DataLoader, default=None, help="Path to validation data folder")
     
     p.add_argument("--device", type=str, choices=["auto", "cuda", "cpu"], default="auto", help="Device to run training on: 'auto' (default), 'cuda', or 'cpu'")
-
+	p.add_argument("--train_with_inference", type=bool, default=False, help="Whether to train with inference mode enabled (torch.inference_mode())")
     return p.parse_args()
 
 
@@ -4525,7 +4525,7 @@ def main():
     logic_total_steps = 0
     min_lr_ratio=0.01
 
-    is_dist=dist.is_available() and dist.is_initialized()
+    is_dist=dist.is_available() and dist.is_initialized() and dist.is_initialized() and not args.train_with_inference
 
     if is_main_process() or not is_dist:
         if total_steps <= 0:
