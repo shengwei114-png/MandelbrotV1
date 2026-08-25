@@ -4,6 +4,10 @@ This repository contains the distributed pretraining setup used for our
 four-GPU experiments. The default cluster runs four processes on one Linux
 machine: one server, two middle servers, and one client.
 
+## Global Initiative
+
+Learn more about the [Mandelbrot Global Initiative](http://www.mandelbrot.cn:8080/JSPWiki/Wiki.jsp?page=Global%20Initiative2).
+
 ## 1. Environment Setup (Linux)
 
 ### 1.1 Requirements
