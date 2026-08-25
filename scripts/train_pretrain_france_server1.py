@@ -2328,7 +2328,7 @@ def parse_args():
     p.add_argument("--max_epochs", type=int, default=-1, help="Maximum number of training epochs")
     p.add_argument("--min_loss", type=float, default=0.01, help="Minimum loss threshold to stop training")
 
-    p.add_argument("--gradient_accumulation_steps", type=int, default=32)  # 降低accumulation加快迭代
+    p.add_argument("--gradient_accumulation_steps", type=int, default=3)  # 降低accumulation加快迭代
     p.add_argument("--learning_rate", type=float, default=3e-4)  # 降低学习率提高稳定性
     p.add_argument("--weight_decay", type=float, default=0.01)
     p.add_argument("--adam_beta1", type=float, default=0.9)
@@ -2410,7 +2410,7 @@ def parse_args():
     p.add_argument("--vram_threshold", type=float, default=0.85, help="显存阈值（默认0.85）")
     p.add_argument("--save_steps", type=int, default=-1)
     p.add_argument("--save_epochs", type=int, default=-1, help="Save checkpoint every N epochs when --save_strategy epoch")
-    p.add_argument("--use_cross_card_op", type=bool, default=True, help="是否使用梯度回传")
+    p.add_argument("--use_cross_card_op", type=bool, default=False, help="是否使用梯度回传")
     p.add_argument(
         "--precision",
         type=str,
