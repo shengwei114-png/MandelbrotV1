@@ -1,161 +1,155 @@
 # Scripts Usage Guide
 
-This directory provides scripts for two four-process workflows:
+This directory provides scripts for two four-process workflows managed by
+`start.sh` and `tmux`:
 
-1. Distributed inference
-2. Training during distributed inference
+1. Distributed inference (`start.sh` option `2`)
+2. Training during distributed inference (`start.sh` option `3`)
 
-Both workflows use four GPUs and four terminals. Run every command from the
-repository root, and activate the same Python virtual environment in every
-terminal.
+Both workflows use four GPUs. `start.sh` creates one tmux window for each
+process and assigns ranks `0`, `1`, `2`, and `3` with `WORLD_SIZE=4`.
 
 ## Before You Start
 
+- Run `start.sh` from the repository root.
+- Make sure the `.venv` virtual environment and `tmux` are available.
 - Make sure four GPUs are available.
-- Use a unique rank for each process: `0`, `1`, `2`, and `3`.
-- Keep `WORLD_SIZE=4` in all four terminals.
-- Start the processes in order: Server, Middle Server 1, Middle Server 2, and
-  finally Client.
-- Wait until each process has completed initialization before starting the next
-  one. Model loading and gRPC/NCCL initialization can take some time.
+- Set every checkpoint path before starting the cluster.
 - Use the checkpoint produced for the corresponding model shard. Do not load a
   Server checkpoint into a Middle Server or Client process.
+- `start.sh` starts the processes in this order: Server, Middle Server 1,
+  Middle Server 2, and Client. If a process starts before the preceding process
+  is ready, increase the corresponding `sleep` value in `start.sh`.
 
-The examples below pass checkpoint paths on the command line. This overrides
-the default paths defined in the scripts, so editing the Python files is not
-required.
+Start the launcher with:
+
+```bash
+cd /path/to/MandelbrotV1
+source .venv/bin/activate
+bash start.sh
+```
 
 ## 1. Distributed Inference
 
-For distributed inference, all four roles load their trained weights through
-`--checkpoint_dir`.
+Enter `2` when `start.sh` displays the startup menu. The launcher starts the
+following four processes automatically:
 
-| Terminal | Role | Rank | Script | Required checkpoint |
+| tmux window | Role | Rank | Script | Required checkpoint |
 | --- | --- | ---: | --- | --- |
-| 1 | Server | 0 | `test_server_5B.py` | Server checkpoint |
-| 2 | Middle Server 1 | 1 | `test_middle_server_5B_A.py` | Middle Server 1 checkpoint |
-| 3 | Middle Server 2 | 2 | `test_middle_server_5B_B.py` | Middle Server 2 checkpoint |
-| 4 | Client | 3 | `test_client_5B.py` | Client checkpoint |
+| 0 | Server | 0 | `test_server_5B.py` | Server checkpoint |
+| 1 | Middle Server 1 | 1 | `test_middle_server_5B_A.py` | Middle Server 1 checkpoint |
+| 2 | Middle Server 2 | 2 | `test_middle_server_5B_B.py` | Middle Server 2 checkpoint |
+| 3 | Inference Client | 3 | `test_client_5B.py` | Client checkpoint |
 
-Open four terminals in the repository root and run the following commands.
-Replace every example checkpoint path with the actual path produced by
-training.
+### Configure the Checkpoints
 
-### Terminal 1: Server
+Before selecting option `2`, update the `--checkpoint_dir` default in each
+inference script so that it points to the checkpoint produced for that role:
 
-```bash
-source .venv/bin/activate && \
-export RANK=0 LOCAL_RANK=0 WORLD_SIZE=4 && \
-python scripts/test_server_5B.py \
-  --checkpoint_dir /path/to/server/checkpoint
+```python
+p.add_argument("--checkpoint_dir", default="/absolute/path/to/checkpoint")
 ```
 
-Wait until the Server is ready before continuing.
+Update the following files:
 
-### Terminal 2: Middle Server 1
+- `test_server_5B.py`: Server checkpoint
+- `test_middle_server_5B_A.py`: Middle Server 1 checkpoint
+- `test_middle_server_5B_B.py`: Middle Server 2 checkpoint
+- `test_client_5B.py`: Client checkpoint
 
-```bash
-source .venv/bin/activate && \
-export RANK=1 LOCAL_RANK=1 WORLD_SIZE=4 && \
-python scripts/test_middle_server_5B_A.py \
-  --checkpoint_dir /path/to/middle1/checkpoint
+The four paths may be different because every process loads a different model
+shard.
+
+### Configure the Inference Prompt
+
+The `--prompt` argument in `test_client_5B.py` controls the sentence supplied
+to the distributed model for generation:
+
+```python
+p.add_argument(
+    "--prompt",
+    default="I'd like to see more computer language instructions like the",
+)
 ```
 
-Wait until Middle Server 1 is ready before continuing.
+Replace the default value with the sentence that you want the model to
+continue. Because `start.sh` currently starts `test_client_5B.py` without
+command-line arguments, the value configured as the script default is used.
 
-### Terminal 3: Middle Server 2
+For example:
 
-```bash
-source .venv/bin/activate && \
-export RANK=2 LOCAL_RANK=2 WORLD_SIZE=4 && \
-python scripts/test_middle_server_5B_B.py \
-  --checkpoint_dir /path/to/middle2/checkpoint
+```python
+p.add_argument(
+    "--prompt",
+    default="Explain how distributed inference works",
+)
 ```
 
-Wait until Middle Server 2 is ready before starting the Client.
-
-### Terminal 4: Inference Client
-
-```bash
-source .venv/bin/activate && \
-export RANK=3 LOCAL_RANK=3 WORLD_SIZE=4 && \
-python scripts/test_client_5B.py \
-  --checkpoint_dir /path/to/client/checkpoint
-```
+After configuring the four checkpoints and the prompt, run `bash start.sh` and
+enter `2`.
 
 ## 2. Training During Distributed Inference
 
-In this workflow, the Server and both Middle Servers run the same distributed
-inference services, while the fourth process resumes the Client training
-script.
+Enter `3` when `start.sh` displays the startup menu. The Server and both Middle
+Servers provide distributed inference services, while the fourth process
+resumes Client training.
 
-The three service scripts load their model shards through `--checkpoint_dir`.
-The training Client must use `--resume_from_checkpoint` instead.
-
-| Terminal | Role | Rank | Script | Checkpoint argument |
+| tmux window | Role | Rank | Script | Checkpoint setting |
 | --- | --- | ---: | --- | --- |
-| 1 | Server | 0 | `test_server_5B.py` | `--checkpoint_dir` |
-| 2 | Middle Server 1 | 1 | `test_middle_server_5B_A.py` | `--checkpoint_dir` |
-| 3 | Middle Server 2 | 2 | `test_middle_server_5B_B.py` | `--checkpoint_dir` |
-| 4 | Training Client | 3 | `train_pretrain_france_client1.py` | `--resume_from_checkpoint` |
+| 0 | Server | 0 | `test_server_5B.py` | `--checkpoint_dir` |
+| 1 | Middle Server 1 | 1 | `test_middle_server_5B_A.py` | `--checkpoint_dir` |
+| 2 | Middle Server 2 | 2 | `test_middle_server_5B_B.py` | `--checkpoint_dir` |
+| 3 | Training Client | 3 | `train_pretrain_france_client1.py` | `--resume_from_checkpoint` |
 
-### Terminal 1: Server
+Before selecting option `3`:
 
-```bash
-source .venv/bin/activate && \
-export RANK=0 LOCAL_RANK=0 WORLD_SIZE=4 && \
-python scripts/test_server_5B.py \
-  --checkpoint_dir /path/to/server/checkpoint
+1. Set `--checkpoint_dir` in `test_server_5B.py` to the trained Server
+   checkpoint.
+2. Set `--checkpoint_dir` in `test_middle_server_5B_A.py` to the trained Middle
+   Server 1 checkpoint.
+3. Set `--checkpoint_dir` in `test_middle_server_5B_B.py` to the trained Middle
+   Server 2 checkpoint.
+4. Set `--resume_from_checkpoint` in `train_pretrain_france_client1.py` to the
+   Client checkpoint from which training should resume.
+
+For the training Client, change the argument default from `None` to the actual
+checkpoint path:
+
+```python
+p.add_argument(
+    "--resume_from_checkpoint",
+    type=str,
+    default="/absolute/path/to/client/checkpoint",
+    help="Path to a checkpoint to resume training from",
+)
 ```
 
-### Terminal 2: Middle Server 1
+After configuring these paths, run `bash start.sh` and enter `3`.
+
+## Monitoring and Stopping the Cluster
+
+Attach to the tmux session:
 
 ```bash
-source .venv/bin/activate && \
-export RANK=1 LOCAL_RANK=1 WORLD_SIZE=4 && \
-python scripts/test_middle_server_5B_A.py \
-  --checkpoint_dir /path/to/middle1/checkpoint
+tmux attach -t train_cluster
 ```
 
-### Terminal 3: Middle Server 2
+Inside tmux:
+
+- Press `Ctrl+B`, then a window number (`0`-`3`) to view a process.
+- Press `Ctrl+B`, then `D` to detach without stopping the processes.
+
+Stop all four processes by terminating the tmux session:
 
 ```bash
-source .venv/bin/activate && \
-export RANK=2 LOCAL_RANK=2 WORLD_SIZE=4 && \
-python scripts/test_middle_server_5B_B.py \
-  --checkpoint_dir /path/to/middle2/checkpoint
+tmux kill-session -t train_cluster
 ```
-
-### Terminal 4: Training Client
-
-```bash
-source .venv/bin/activate && \
-export RANK=3 LOCAL_RANK=3 WORLD_SIZE=4 && \
-python scripts/train_pretrain_france_client1.py \
-  --resume_from_checkpoint /path/to/client/checkpoint
-```
-
-Any additional training arguments can be appended to the final command as
-needed.
-
-## Checkpoint Notes
-
-- `--checkpoint_dir` specifies the model-shard checkpoint loaded by each
-  distributed inference script.
-- `--resume_from_checkpoint` resumes the Client training state from an existing
-  Client checkpoint.
-- The checkpoint directories must contain the files expected by the relevant
-  script's checkpoint loader.
-- If a path contains spaces, wrap it in quotes.
-- If you prefer persistent defaults, update the corresponding argument default
-  inside each script. Passing the path on the command line is recommended
-  because it keeps the scripts reusable.
 
 ## Common Startup Problems
 
 - `Invalid rank requested`: verify that the four ranks are exactly `0`, `1`,
   `2`, and `3`, and that every process uses `WORLD_SIZE=4`.
-- `Connection refused`: the next service was started before the preceding one
-  was ready, or the expected gRPC service is not running.
+- `Connection refused`: a service may not have completed initialization before
+  the next process started. Increase the relevant `sleep` value in `start.sh`.
 - `TCPStore ... failed to recv` or `Broken pipe`: another rank usually exited
   first. Inspect the earliest error in the Server and Middle Server terminals.
