@@ -140,6 +140,21 @@ process to each GPU:
 - GPU 2: Middle Server 2
 - GPU 3: Client
 
+#### Startup Timing Note
+
+`start.sh` launches the four role scripts sequentially and uses `sleep` between
+the launches. On some machines, model/tokenizer loading and gRPC/NCCL
+initialization take longer than these default delays. If the next role starts
+before the previous role is ready, the cluster may appear to hang without an
+immediate error.
+
+If this happens, manually increase the `sleep` values in `start.sh`, especially
+the delays after the server and middle-server launches. There is no single
+correct delay for every environment; allow enough time for each role to finish
+its initialization before starting the next one. Alternatively, start the four
+scripts manually in separate terminals and wait for each preceding role to be
+ready before launching the next role.
+
 ```bash
 # 1) Activate the virtual environment
 cd /path/to/MandelbrotV1
