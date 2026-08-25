@@ -64,12 +64,23 @@ export LD_LIBRARY_PATH="$CUDA_HOME/lib64:${LD_LIBRARY_PATH:-}"
 # MAX_JOBS limits parallel compilation to reduce peak RAM usage.
 FLASH_ATTENTION_FORCE_BUILD=TRUE MAX_JOBS=4 \
 python -m pip install -v --no-build-isolation "flash-attn==2.8.3.post1"
+
+# 4) Upgrade NCCL separately after all other dependencies are installed
+# --no-deps prevents pip from reinstalling or changing the PyTorch stack.
+python -m pip install --upgrade --no-deps "nvidia-nccl-cu12==2.30.7"
+
+# Verify the installed NCCL package version
+python -m pip show nvidia-nccl-cu12
 ```
 
 Notes:
 - `torch==2.7.1` / `torchvision==0.22.1` are version examples. If your hardware/driver does not match, switch to the appropriate CUDA version and installation source. This exact combination is not mandatory.
 
 - FlashAttention uses `nvcc` to compile its CUDA kernels, which is why the compiler path and version may need to be checked. Compare `nvcc --version` with `torch.version.cuda` first. If `nvcc` is already available and the versions match, you do not need to locate it or set the CUDA environment variables again. If `nvcc` is missing or points to a different toolkit, locate it, set `CUDA_HOME` to the toolkit root containing `bin/nvcc`, and verify it with `"$CUDA_HOME/bin/nvcc" --version`. The `/usr/local/cuda-12.8` value above is only an example.
+
+- Install the NCCL upgrade only after PyTorch and all packages in `requirements.txt` have been installed. Installing or repairing the PyTorch dependencies later may restore PyTorch's pinned NCCL package, in which case the standalone NCCL upgrade command must be run again. The command above is for a CUDA 12 (`cu12`) PyTorch build such as `cu128`; use the matching NCCL package for a different CUDA major version.
+
+- With a prebuilt PyTorch wheel, `torch.cuda.nccl.version()` can continue to show the NCCL version used when PyTorch was compiled (for example, `2.26.2`) even after the separately installed `nvidia-nccl-cu12` package has been upgraded to `2.30.7`. Use `python -m pip show nvidia-nccl-cu12` to confirm the installed package version. Because PyTorch 2.7.1 pins an older NCCL package in its dependency metadata, `python -m pip check` may report a version conflict after this intentional override.
 
 - You also need to replace a file in the transformers package: copy `modeling_outputs.py` from the `transformers` directory in this folder, overwriting the one at `.venv/lib/python3.12/site-packages/transformers/modeling_outputs.py`.
 
