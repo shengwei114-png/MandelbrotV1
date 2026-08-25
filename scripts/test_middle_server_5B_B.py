@@ -63,6 +63,8 @@ autocast_kwargs = {
 }
 print("[Middle] Entering loop...")
 for step, batch in enumerate(dl):
+    attention_mask = batch['attention_mask']
+    batch = batch['input_ids']
     if args.max_steps>0 and step >= args.max_steps: break
     model.last_layer_idx = None if use_dr else ds.last_layer_idx
     if hasattr(batch, "to"): batch = batch.to(device)
