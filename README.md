@@ -8,6 +8,11 @@ machine: one server, two middle servers, and one client.
 
 Learn more about the [Mandelbrot Global Initiative](http://www.mandelbrot.cn:8080/JSPWiki/Wiki.jsp?page=Global%20Initiative2).
 
+## Contact
+
+For project inquiries, collaboration, or consultation, please contact us at
+[shengwei@mandelbrot.cn](shengwei@mandelbrot.cn).
+
 ## 1. Environment Setup (Linux)
 
 ### 1.1 Requirements
