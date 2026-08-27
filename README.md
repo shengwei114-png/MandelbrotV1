@@ -123,6 +123,13 @@ To test with a different dataset, modify the `--train_folder` argument in the sc
 
 ## 3. Distributed Training
 
+The following diagram illustrates the distributed training architecture across
+the Server, Middle Servers, and Clients.
+
+[![Distributed training architecture](docs/images/distributed-training-architecture.png)](docs/images/distributed-training-architecture.png)
+
+*Figure 1. Distributed training architecture.*
+
 ### 3.1 Commonly Used Parameters
 
 The most frequently used arguments are listed below (training essentials only):
@@ -183,6 +190,18 @@ tmux attach -t train_cluster
 # 4) Stop distributed training
 tmux kill-session -t train_cluster 2>/dev/null
 ```
+
+## 4. Training During Distributed Inference
+
+In this mode, the Server and Middle Servers perform distributed inference,
+while the Client continues training the final model blocks.
+
+[![Training during distributed inference architecture](docs/images/training-during-inference-architecture.png)](docs/images/training-during-inference-architecture.png)
+
+*Figure 2. Training during distributed inference.*
+
+For startup instructions and checkpoint configuration, see the
+[scripts usage guide](scripts/README.md#2-training-during-distributed-inference).
 
 ## License
 
