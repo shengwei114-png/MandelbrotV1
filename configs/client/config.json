@@ -306,6 +306,5 @@
   "weight_para_indep_scale": 1.0,
   "_attn_implementation": "flash_attention_2",
   "_pre_quantization_dtype": "bfloat16",
-  "ignore_layer_ids":[25],
-  "use_text_tokenID":true
+  "ignore_layer_ids":[25]
 }
