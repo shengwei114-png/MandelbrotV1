@@ -1,10 +1,9 @@
 # MandelbrotV1-Distributed-Pretraining
 
-This repository contains the distributed pretraining setup used for our
-four-GPU experiments. The default cluster runs four processes on one Linux
+This repository contains the distributed pretraining setup used for four-RTX-5090 GPU experiments. The default cluster runs four processes on one Linux
 machine: one server, two middle servers, and one client.
 
-> Using this distributed setup, a 5B-parameter model can be pretrained from scratch for approximately USD 1,500.
+> Using this distributed setup, a 5B-parameter model can be pretrained from scratch for approximately USD 1,500.with a throughput exceeding 10,000 tokens/s.
 
 ## Global Initiative
 
