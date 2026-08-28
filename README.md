@@ -6,7 +6,7 @@ machine: one server, two middle servers, and one client.
 ## Highlights
 
 - A 5B-parameter model can be pretrained from scratch for approximately USD 1,500.
-- Aggregate training throughput exceeds 10,000 tokens per second on four RTX 5090 GPUs under the tested configuration.
+- Single-GPU training throughput exceeds 10,000 tokens per second on an RTX 5090, with an aggregate throughput of over 40,000 tokens per second across four GPUs under the tested configuration.
 
 ## Global Initiative
 
